@@ -163,6 +163,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7ddc94ee282de641ab129f2423db3d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  send: {fileID: 1421914457}
+  sentText: {fileID: 1638189216}
+  result: {fileID: 1645356141}
 --- !u!1 &296839753
 GameObject:
   m_ObjectHideFlags: 0
