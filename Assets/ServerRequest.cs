@@ -9,8 +9,8 @@ using UnityEngine.UI;
 
 public class ServerRequest : MonoBehaviour
 {
-    //private string serverUrl = "https://dotamania.bsite.net/api"; // URL твого сервера
-    private string serverUrl = "http://localhost:51754/api";
+    private string serverUrl = "https://dotamania.bsite.net/api"; // URL твого сервера
+    //private string serverUrl = "http://localhost:51754/api";
 
     public Button send;
     public TMP_InputField sentText;
