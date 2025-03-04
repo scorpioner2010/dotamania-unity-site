@@ -3,6 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Text;
 using System;
+using NUnit.Framework.Internal;
 using TMPro;
 using UnityEngine.UI;
 
@@ -38,13 +39,18 @@ public class ServerRequest : MonoBehaviour
 
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("Відповідь сервера: " + request.downloadHandler.text);
-            result.text = request.downloadHandler.text;
+            MessageRequest data = JsonUtility.FromJson<MessageRequest>(request.downloadHandler.text);
+            result.text = data.message;
         }
         else
         {
-            Debug.LogError("Помилка запиту: " + request.error);
-            result.text = "error!";
+            result.text = request.error;
         }
+    }
+    
+    [Serializable]
+    public class MessageRequest
+    {
+        public string message;
     }
 }
