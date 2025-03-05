@@ -1,14 +1,19 @@
+using TMPro;
 using UnityEngine;
 
 namespace Scenes
 {
     public class FileReceiver : MonoBehaviour
     {
-        // Цей метод викликається з JavaScript
+        public TMP_Text text;
+
+        // Метод викликається з JavaScript (через SendMessage)
         public void ReceiveFileContent(string fileContent)
         {
             Debug.Log("Вміст файлу: " + fileContent);
-            // Обробка вмісту файлу за потребою
+
+            // Відобразимо вміст файлу в TMP_Text
+            text.text = fileContent;
         }
     }
 }
