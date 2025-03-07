@@ -217,6 +217,7 @@ MonoBehaviour:
   send: {fileID: 1421914457}
   sentText: {fileID: 1638189216}
   result: {fileID: 1645356141}
+  img: {fileID: 473296518}
 --- !u!1 &248099699
 GameObject:
   m_ObjectHideFlags: 0
