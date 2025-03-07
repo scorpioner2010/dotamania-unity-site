@@ -6,8 +6,8 @@ namespace Scenes
 {
     public class Element : MonoBehaviour
     {
-        public TMP_Text description;
-        public Image image;
-        public Button save;
+        public TMP_Text nameContainer;
+        public TMP_Text descriptionContainer;
+        public Image imageContainer;
     }
 }

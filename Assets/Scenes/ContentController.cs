@@ -1,45 +1,49 @@
-using System;
 using System.Collections.Generic;
+using RedDeck.Utilities;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Scenes
 {
     public class ContentController : MonoBehaviour
     {
-        public Button create;
-        public Button clearAll;
-        
         public Element prefabElement;
-        public ScrollRect scrollRect;
         public Transform content;
-
         public List<Element> elements = new();
-        public FileReceiver receiver;
 
-        private void Start()
+        public void Remove(string nameContainer)
         {
-            create.onClick.AddListener(Create);
-            clearAll.onClick.AddListener(ClearAll);
+            elements.RemoveAllNull();
+            
+            foreach (Element element in elements)
+            {
+                if (element.nameContainer.text == nameContainer)
+                {
+                    Destroy(element.gameObject);
+                }
+            }
         }
 
-        private void Create()
+        public void RemoveAll()
+        {
+            foreach (Element element in elements)
+            {
+                if (element != null)
+                {
+                    Destroy(element.gameObject);
+                }
+                
+            }
+            elements.Clear();
+        }
+
+        private void Create(string nameContainer, string descriptionContainer, Sprite iconContainer)
         {
             Element o = Instantiate(prefabElement, content, true);
             elements.Add(o);
             o.transform.localScale = Vector3.one;
-            o.image.sprite = receiver.image.sprite;
-            o.description.text = receiver.text.text;
-        }
-
-        public void ClearAll()
-        {
-            foreach (var element in elements)
-            {
-                Destroy(element.gameObject);
-            }
-            
-            elements.Clear();
+            o.imageContainer.sprite = iconContainer;
+            o.nameContainer.text = nameContainer;
+            o.descriptionContainer.text = descriptionContainer;
         }
     }
 }

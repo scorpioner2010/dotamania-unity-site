@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine.Serialization;
 
 namespace Scenes
 {
@@ -11,8 +12,9 @@ namespace Scenes
         [DllImport("__Internal")]
         private static extern void OpenFileSelectionJS();
 
-        public TMP_Text text;
-        public Image image;
+        [FormerlySerializedAs("name")] public TMP_InputField nameContainer;
+        [FormerlySerializedAs("text")] public TMP_InputField descriptionContainer;
+        [FormerlySerializedAs("image")] public Image loadedImage;
 
         public void OpenFileSelection()
         {
@@ -44,8 +46,8 @@ namespace Scenes
 
         private void DisplayText(string fileContent)
         {
-            if (text != null)
-                text.text = fileContent;
+            if (descriptionContainer != null)
+                descriptionContainer.text = fileContent;
         }
 
         private void DisplayImage(string base64Data)
@@ -60,8 +62,8 @@ namespace Scenes
                 new Vector2(0.5f, 0.5f)
             );
 
-            if (image != null)
-                image.sprite = newSprite;
+            if (loadedImage != null)
+                loadedImage.sprite = newSprite;
         }
     }
 }

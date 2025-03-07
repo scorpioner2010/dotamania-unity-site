@@ -49,6 +49,7 @@
     <Compile Include="Assets\Scenes\FileSelector.cs" />
     <Compile Include="Assets\Scenes\FileReceiver.cs" />
     <Compile Include="Assets\Scenes\Element.cs" />
+    <Compile Include="Assets\Scenes\GameplayAssistant.cs" />
     <Compile Include="Assets\Scenes\ContentController.cs" />
     <Compile Include="Assets\Scenes\ServerRequest.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
