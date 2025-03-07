@@ -2,19 +2,19 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 using System;
-using Scenes;
 using TMPro;
 using UnityEngine.UI;
+using Scenes;
+using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 public class ServerRequest : MonoBehaviour
 {
-    //public string serverUrl = "https://dotamania.bsite.net/api"; // URL твого сервера
+    //public string serverUrl = "https://dotamania.bsite.net/api";
     public string serverUrl = "http://localhost:51754/api";
 
-    // Кнопка для завантаження контейнера
-    public Button send;
-    // Кнопка для видалення контейнера
-    public Button delete;
+    public Button send;       // Кнопка для завантаження контейнера
+    public Button delete;     // Кнопка для видалення контейнера
     public TMP_Text result;
     
     public Image imgContainer;
@@ -22,18 +22,21 @@ public class ServerRequest : MonoBehaviour
     public TMP_InputField descriptionContainer;
 
     public ContentController contentController;
-    
+
     private void Start()
     {
+        // Після запуску отримуємо весь список із сервера
+        StartCoroutine(GetContainersFromServer());
+
         send.onClick.AddListener(() =>
         {
-            // Викликаємо метод завантаження контейнера
+            // Завантажуємо контейнер, а потім оновлюємо список
             StartCoroutine(UploadContainer(imgContainer.sprite));
         });
         
         delete.onClick.AddListener(() =>
         {
-            // Викликаємо метод видалення контейнера за назвою з поля nameContainer
+            // Видаляємо контейнер, а потім оновлюємо список
             StartCoroutine(DeleteContainer(nameContainer.text));
         });
     }
@@ -47,14 +50,11 @@ public class ServerRequest : MonoBehaviour
         {
             // 2. Створення 64x64 текстури білого кольору
             texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
-        
-            // Масив кольорів
             Color32[] pixels = new Color32[64 * 64];
             for (int i = 0; i < pixels.Length; i++)
             {
                 pixels[i] = new Color32(255, 255, 255, 255); // білий
             }
-        
             texture.SetPixels32(pixels);
             texture.Apply();
         }
@@ -82,6 +82,9 @@ public class ServerRequest : MonoBehaviour
             {
                 Debug.Log("Container uploaded successfully!");
                 result.text = "Container uploaded successfully!";
+                
+                // Оновлюємо список контейнерів
+                StartCoroutine(GetContainersFromServer());
             }
             else
             {
@@ -108,6 +111,9 @@ public class ServerRequest : MonoBehaviour
         {
             Debug.Log("Container deleted successfully!");
             result.text = "Container deleted successfully!";
+            
+            // Оновлюємо список контейнерів
+            StartCoroutine(GetContainersFromServer());
         }
         else
         {
@@ -115,10 +121,100 @@ public class ServerRequest : MonoBehaviour
             result.text = "Delete error: " + request.error;
         }
     }
+
+    // ============ ОНОВЛЕННЯ СПИСКУ КОНТЕЙНЕРІВ ============
+
+    private IEnumerator GetContainersFromServer()
+    {
+        using (UnityWebRequest www = UnityWebRequest.Get(serverUrl + "/containers"))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                // Отримуємо JSON
+                string json = www.downloadHandler.text;
+                // Парсимо масив ContainerInfo[]
+                ContainerInfo[] containers = JsonHelper.FromJson<ContainerInfo>(json);
+
+                // Очищаємо локальний список
+                contentController.RemoveAll();
+
+                // Створюємо елементи для кожного контейнера
+                foreach (ContainerInfo c in containers)
+                {
+                    // Створюємо текстуру
+                    Texture2D tex = new Texture2D(2, 2);
+                    
+                    if (!string.IsNullOrEmpty(c.imageBase64))
+                    {
+                        byte[] bytes = Convert.FromBase64String(c.imageBase64);
+                        tex.LoadImage(bytes);
+                    }
+                    else
+                    {
+                        // Якщо картинки немає – робимо білу 64x64
+                        tex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+                        Color32[] pixels = new Color32[64 * 64];
+                        for (int i = 0; i < pixels.Length; i++)
+                        {
+                            pixels[i] = new Color32(255, 255, 255, 255);
+                        }
+                        tex.SetPixels32(pixels);
+                        tex.Apply();
+                    }
+
+                    // Створюємо спрайт
+                    Sprite sprite = Sprite.Create(tex,
+                        new Rect(0, 0, tex.width, tex.height),
+                        new Vector2(0.5f, 0.5f));
+
+                    // Додаємо новий елемент у список
+                    contentController.CreateElement(c.name, c.description, sprite);
+                }
+                
+                result.text = "Containers updated: " + containers.Length;
+            }
+            else
+            {
+                Debug.LogError("GetContainers error: " + www.error);
+                result.text = "GetContainers error: " + www.error;
+            }
+        }
+    }
+
+    // ====== КЛАСИ-ДОПОМОЖНИКИ ======
     
     [Serializable]
     public class MessageRequest
     {
         public string message;
+    }
+
+    [Serializable]
+    public class ContainerInfo
+    {
+        public string name;
+        public string description;
+        public string imageBase64;
+    }
+
+    // Unity не вміє напряму парсити масиви через JsonUtility,
+    // тому використовуємо обгортку
+    public static class JsonHelper
+    {
+        public static T[] FromJson<T>(string json)
+        {
+            // Обгортаємо масив у поле "Items"
+            string newJson = "{ \"Items\": " + json + "}";
+            Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(newJson);
+            return wrapper.Items;
+        }
+
+        [Serializable]
+        private class Wrapper<T>
+        {
+            public T[] Items;
+        }
     }
 }

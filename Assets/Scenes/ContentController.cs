@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using RedDeck.Utilities;
+using RedDeck.Utilities; // <-- Якщо у вас є цей неймспейс, залиште. Інакше приберіть.
 using UnityEngine;
 
 namespace Scenes
@@ -31,12 +31,12 @@ namespace Scenes
                 {
                     Destroy(element.gameObject);
                 }
-                
             }
             elements.Clear();
         }
 
-        private void Create(string nameContainer, string descriptionContainer, Sprite iconContainer)
+        // Новий публічний метод, який викликає ServerRequest
+        public void CreateElement(string nameContainer, string descriptionContainer, Sprite iconContainer)
         {
             Element o = Instantiate(prefabElement, content, true);
             elements.Add(o);
