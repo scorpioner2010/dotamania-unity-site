@@ -1,25 +1,29 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Runtime.InteropServices;
 
 namespace Scenes
 {
     public class FileSelector : MonoBehaviour
     {
-        public Button loadFile;
+        [DllImport("__Internal")]
+        private static extern void OpenFileSelectionJS();
+
+        public Button loadFileButton;
 
         private void Awake()
         {
-            loadFile.onClick.AddListener(() =>
-            {
-                OpenFileSelection();
-            });
+            loadFileButton.onClick.AddListener(OpenFileSelection);
         }
 
-        // Викликає JavaScript функцію для відкриття вікна вибору файлу
         public void OpenFileSelection()
         {
-            Application.ExternalCall("triggerFileSelection");
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // Викликаємо функцію з .jslib
+            OpenFileSelectionJS();
+#else
+            Debug.Log("Функція OpenFileSelectionJS викликана в Editor. У WebGL працює правильно.");
+#endif
         }
     }
 }

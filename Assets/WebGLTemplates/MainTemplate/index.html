@@ -2,135 +2,96 @@
 <html lang="en-us">
 <head>
   <meta charset="utf-8">
+  <!-- Забезпечує коректне масштабування на різних пристроях -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DotaMania</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>Unity Web Player | DotaMania</title>
-  <link rel="shortcut icon" href="TemplateData/favicon.ico">
-  <link rel="stylesheet" href="TemplateData/style.css">
+  <!-- ПРИКЛАД: Якщо потрібен favicon, можна підключити: -->
+  <!-- <link rel="shortcut icon" href="TemplateData/favicon.ico"> -->
 
-  <!-- Стилі для приховування стандартного поля вибору файлу -->
-  <style>
-    /* Ховаємо дефолтне поле Choose File */
-    #fileInput {
-      display: none;
-    }
-  </style>
+  <!-- Підключення файлу стилів (за потреби) -->
+  <link rel="stylesheet" href="TemplateData/style.css">
 </head>
 <body>
-<div id="unity-container" class="unity-desktop">
-  <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
-  <div id="unity-loading-bar">
-    <div id="unity-logo"></div>
-    <div id="unity-progress-bar-empty">
-      <div id="unity-progress-bar-full"></div>
-    </div>
-  </div>
-  <div id="unity-warning"></div>
-  <div id="unity-footer">
-    <div id="unity-logo-title-footer"></div>
-    <div id="unity-fullscreen-button"></div>
-    <div id="unity-build-title">DotaMania</div>
-  </div>
+<!-- Контейнер для Unity -->
+<div id="unity-container">
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
 </div>
 
 <!-- Приховане поле для вибору файлу -->
-<div id="file-upload">
-  <input type="file" id="fileInput" accept=".txt" onchange="onFileSelected(event)">
-</div>
+<input type="file" id="fileInput" accept=".txt, .png, .jpg, .jpeg" onchange="onFileSelected(event)">
 
 <script>
-  // Викликається при виборі файлу
-  function onFileSelected(event) {
-    var file = event.target.files[0];
-    if (!file) return;
-    console.log("Файл обрано: " + file.name);
-
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var fileContent = e.target.result;
-      console.log("Зчитано вміст файлу, виклик myUnityInstance.SendMessage");
-
-      // Викликаємо метод ReceiveFileContent через екземпляр Unity
-      if (window.myUnityInstance) {
-        window.myUnityInstance.SendMessage("FileReceiver", "ReceiveFileContent", fileContent);
-      } else {
-        console.error("myUnityInstance не визначено або Unity ще не завантажився");
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  // Відкриваємо вікно вибору файлу з Unity (Application.ExternalCall/ExternalEval)
-  function triggerFileSelection() {
+  // Викликається з .jslib
+  function OpenFileSelectionJS() {
     document.getElementById('fileInput').click();
   }
 
-  var canvas = document.querySelector("#unity-canvas");
+  // Обробник вибору файлу
+  function onFileSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  function unityShowBanner(msg, type) {
-    var warningBanner = document.querySelector("#unity-warning");
-    function updateBannerVisibility() {
-      warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+    // Обмеження розміру файлу (макс. 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Файл завеликий! Оберіть менший файл.");
+      return;
     }
-    var div = document.createElement('div');
-    div.innerHTML = msg;
-    warningBanner.appendChild(div);
-    if (type === 'error') div.style = 'background: red; padding: 10px;';
-    else {
-      if (type === 'warning') div.style = 'background: yellow; padding: 10px;';
-      setTimeout(function() {
-        warningBanner.removeChild(div);
-        updateBannerVisibility();
-      }, 5000);
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      let fileContent = e.target.result;
+      if (file.type.startsWith("image/")) {
+        // Якщо це зображення, беремо Base64 (частина після 'data:...')
+        fileContent = fileContent.split(',')[1];
+      }
+
+      // Надсилаємо дані у Unity
+      if (window.myUnityInstance) {
+        const fileType = file.type.startsWith("image/") ? "Image" : "Text";
+        window.myUnityInstance.SendMessage(
+                "FileReceiver",
+                "ReceiveFileContent",
+                fileType + "|" + fileContent
+        );
+      }
+    };
+
+    if (file.type.startsWith("image/")) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
     }
-    updateBannerVisibility();
   }
 
-  var buildUrl = "Build";
-  var loaderUrl = buildUrl + "/dotamania-github-page.loader.js";
-  var config = {
-    arguments: [],
+  // Шлях до файлів збірки Unity
+  const buildUrl = "Build";
+  const loaderUrl = buildUrl + "/dotamania-github-page.loader.js";
+
+  // Конфіг збірки
+  const config = {
     dataUrl: buildUrl + "/dotamania-github-page.data",
     frameworkUrl: buildUrl + "/dotamania-github-page.framework.js",
     codeUrl: buildUrl + "/dotamania-github-page.wasm",
     streamingAssetsUrl: "StreamingAssets",
     companyName: "DefaultCompany",
     productName: "DotaMania",
-    productVersion: "1.0",
-    showBanner: unityShowBanner,
+    productVersion: "1.0"
   };
 
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-    var meta = document.createElement('meta');
-    meta.name = 'viewport';
-    meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-    document.getElementsByTagName('head')[0].appendChild(meta);
-    document.querySelector("#unity-container").className = "unity-mobile";
-    canvas.className = "unity-mobile";
-  } else {
-    canvas.style.width = "960px";
-    canvas.style.height = "600px";
-  }
-
-  document.querySelector("#unity-loading-bar").style.display = "block";
-
-  var script = document.createElement("script");
+  // Створюємо <script>, щоб підключити loader
+  const script = document.createElement("script");
   script.src = loaderUrl;
   script.onload = () => {
-    createUnityInstance(canvas, config, (progress) => {
-      document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-    }).then((unityInstance) => {
-      // Зберігаємо екземпляр Unity у глобальну змінну
-      window.myUnityInstance = unityInstance;
-
-      document.querySelector("#unity-loading-bar").style.display = "none";
-      document.querySelector("#unity-fullscreen-button").onclick = () => {
-        unityInstance.SetFullscreen(1);
-      };
-    }).catch((message) => {
-      alert(message);
-    });
+    // Запускаємо інстанс Unity
+    createUnityInstance(document.querySelector("#unity-canvas"), config)
+            .then((unityInstance) => {
+              window.myUnityInstance = unityInstance;
+            })
+            .catch((message) => {
+              alert(message);
+            });
   };
-
   document.body.appendChild(script);
 </script>
 </body>
