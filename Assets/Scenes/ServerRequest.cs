@@ -9,8 +9,10 @@ namespace Scenes
 {
     public class ServerRequest : MonoBehaviour
     {
-        // Приклад локального сервера
-        private string serverUrl = "http://localhost:51754/api";
+        // Вкажіть віддалену адресу сервера!
+        private string serverUrl = "https://dotamania.bsite.net/api";
+        // Приклад локального сервера (залиште закоментованим)
+        // public string serverUrl = "http://localhost:51754/api";
         
         public Button send;       // Кнопка для завантаження контейнера
         public Button delete;     // Кнопка для видалення контейнера
@@ -19,34 +21,34 @@ namespace Scenes
         public Image imgContainer;
         public TMP_InputField nameContainer;
         public TMP_InputField descriptionContainer;
-
+    
         public ContentController contentController;
-
+    
         private void Start()
         {
-            // Після запуску отримуємо весь список із сервера
+            // Отримання списку контейнерів після запуску
             StartCoroutine(GetContainersFromServer());
-
+    
             send.onClick.AddListener(() =>
             {
-                // Завантажуємо контейнер, а потім оновлюємо список
                 StartCoroutine(UploadContainer(imgContainer.sprite));
             });
         
             delete.onClick.AddListener(() =>
             {
-                // Видаляємо контейнер, а потім оновлюємо список
                 StartCoroutine(DeleteContainer(nameContainer.text));
             });
         }
     
         private IEnumerator UploadContainer(Sprite sprite)
         {
+            Debug.Log("<color=yellow>=== UploadContainer START ===</color>");
+    
             Texture2D texture;
     
-            // 1. Якщо спрайт порожній – створюємо 64x64 білу текстуру
             if (sprite == null)
             {
+                Debug.Log("Sprite is null. Creating white 64x64 texture...");
                 texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
                 Color32[] pixels = new Color32[64 * 64];
                 for (int i = 0; i < pixels.Length; i++)
@@ -58,31 +60,36 @@ namespace Scenes
             }
             else
             {
-                // Якщо спрайт не null, беремо його текстуру
+                Debug.Log("Sprite is valid. Using sprite texture...");
                 texture = sprite.texture;
             }
-
-            // 2. Перетворення текстури в PNG (масив байтів)
+    
             byte[] imageData = texture.EncodeToPNG();
-
-            // 3. Формування форми для завантаження
+            Debug.Log($"Encoded image size: {imageData.Length} bytes.");
+    
             WWWForm form = new WWWForm();
             // Поля мають співпадати з ContainerCreateDto на сервері
             form.AddField("Name", nameContainer.text);
             form.AddField("Description", descriptionContainer.text);
             form.AddBinaryData("Image", imageData, "sprite.png", "image/png");
-
-            // 4. Відправка запиту (POST /api/containers)
-            using (UnityWebRequest www = UnityWebRequest.Post(serverUrl + "/containers", form))
+    
+            string postUrl = serverUrl + "/containers";
+            Debug.Log($"<color=yellow>Sending POST to: {postUrl}</color>");
+    
+            using (UnityWebRequest www = UnityWebRequest.Post(postUrl, form))
             {
                 yield return www.SendWebRequest();
-         
+    
+                Debug.Log($"HTTP response code: {www.responseCode}");
+                Debug.Log($"IsNetworkError: {www.isNetworkError}");
+                Debug.Log($"IsHttpError: {www.isHttpError}");
+                Debug.Log($"Error: {www.error}");
+                Debug.Log($"Downloaded text: {www.downloadHandler.text}");
+    
                 if (www.result == UnityWebRequest.Result.Success)
                 {
-                    Debug.Log("Container uploaded successfully!");
+                    Debug.Log("<color=green>Container uploaded successfully!</color>");
                     result.text = "Container uploaded successfully!";
-                 
-                    // Оновлюємо список контейнерів
                     StartCoroutine(GetContainersFromServer());
                 }
                 else
@@ -91,27 +98,36 @@ namespace Scenes
                     result.text = "Upload error: " + www.error;
                 }
             }
+    
+            Debug.Log("<color=yellow>=== UploadContainer END ===</color>");
         }
-     
+    
         private IEnumerator DeleteContainer(string containerName)
         {
+            Debug.Log("<color=yellow>=== DeleteContainer START ===</color>");
+    
             if (string.IsNullOrEmpty(containerName))
             {
+                Debug.LogWarning("Container name is required for deletion.");
                 result.text = "Container name is required for deletion.";
                 yield break;
             }
-         
-            // Формуємо URL для DELETE (DELETE /api/containers/{name})
+    
             string url = serverUrl + "/containers/" + containerName;
+            Debug.Log($"<color=yellow>Sending DELETE to: {url}</color>");
             UnityWebRequest request = UnityWebRequest.Delete(url);
             yield return request.SendWebRequest();
-         
+    
+            Debug.Log($"HTTP response code: {request.responseCode}");
+            Debug.Log($"IsNetworkError: {request.isNetworkError}");
+            Debug.Log($"IsHttpError: {request.isHttpError}");
+            Debug.Log($"Error: {request.error}");
+            Debug.Log($"Downloaded text: {request.downloadHandler.text}");
+    
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("Container deleted successfully!");
+                Debug.Log("<color=green>Container deleted successfully!</color>");
                 result.text = "Container deleted successfully!";
-             
-                // Оновлюємо список контейнерів
                 StartCoroutine(GetContainersFromServer());
             }
             else
@@ -119,41 +135,48 @@ namespace Scenes
                 Debug.LogError("Delete error: " + request.error);
                 result.text = "Delete error: " + request.error;
             }
+    
+            Debug.Log("<color=yellow>=== DeleteContainer END ===</color>");
         }
-
-        // ================== ОНОВЛЕННЯ СПИСКУ КОНТЕЙНЕРІВ ==================
-
+    
         private IEnumerator GetContainersFromServer()
         {
-            // GET /api/containers
-            using (UnityWebRequest www = UnityWebRequest.Get(serverUrl + "/containers"))
+            Debug.Log("<color=yellow>=== GetContainersFromServer START ===</color>");
+    
+            string getUrl = serverUrl + "/containers";
+            Debug.Log($"<color=yellow>Sending GET to: {getUrl}</color>");
+    
+            using (UnityWebRequest www = UnityWebRequest.Get(getUrl))
             {
                 yield return www.SendWebRequest();
-
+    
+                Debug.Log($"HTTP response code: {www.responseCode}");
+                Debug.Log($"IsNetworkError: {www.isNetworkError}");
+                Debug.Log($"IsHttpError: {www.isHttpError}");
+                Debug.Log($"Error: {www.error}");
+                Debug.Log($"Downloaded text: {www.downloadHandler.text}");
+    
                 if (www.result == UnityWebRequest.Result.Success)
                 {
-                    // Отримуємо JSON
                     string json = www.downloadHandler.text;
-                    // Парсимо масив ContainerInfo[]
+                    Debug.Log($"JSON from server: {json}");
+    
                     ContainerInfo[] containers = JsonHelper.FromJson<ContainerInfo>(json);
-
-                    // Очищаємо локальний список
                     contentController.RemoveAll();
-
-                    // Створюємо елементи для кожного контейнера
+    
                     foreach (ContainerInfo c in containers)
                     {
-                        // Створюємо текстуру
                         Texture2D tex = new Texture2D(2, 2);
-                     
+    
                         if (!string.IsNullOrEmpty(c.imageBase64))
                         {
                             byte[] bytes = Convert.FromBase64String(c.imageBase64);
                             tex.LoadImage(bytes);
+                            Debug.Log($"Loaded image from base64 for container '{c.name}'.");
                         }
                         else
                         {
-                            // Якщо картинки немає – робимо білу 64x64
+                            Debug.Log($"No imageBase64 for container '{c.name}'. Using white 64x64.");
                             tex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
                             Color32[] pixels = new Color32[64 * 64];
                             for (int i = 0; i < pixels.Length; i++)
@@ -163,16 +186,14 @@ namespace Scenes
                             tex.SetPixels32(pixels);
                             tex.Apply();
                         }
-
-                        // Створюємо спрайт
+    
                         Sprite sprite = Sprite.Create(tex,
                             new Rect(0, 0, tex.width, tex.height),
                             new Vector2(0.5f, 0.5f));
-
-                        // Додаємо новий елемент у список
+    
                         contentController.CreateElement(c.name, c.description, sprite);
                     }
-                
+    
                     result.text = "Containers updated: " + containers.Length;
                 }
                 else
@@ -181,16 +202,16 @@ namespace Scenes
                     result.text = "GetContainers error: " + www.error;
                 }
             }
+    
+            Debug.Log("<color=yellow>=== GetContainersFromServer END ===</color>");
         }
-
-        // ====== КЛАСИ-ДОПОМОЖНИКИ ======
-
+    
         [Serializable]
         public class MessageRequest
         {
             public string message;
         }
-
+    
         [Serializable]
         public class ContainerInfo
         {
@@ -198,19 +219,16 @@ namespace Scenes
             public string description;
             public string imageBase64;
         }
-
-        // Unity не вміє напряму парсити масиви через JsonUtility,
-        // тому використовуємо обгортку
+    
         public static class JsonHelper
         {
             public static T[] FromJson<T>(string json)
             {
-                // Обгортаємо масив у поле "Items"
                 string newJson = "{ \"Items\": " + json + "}";
                 Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(newJson);
                 return wrapper.Items;
             }
-
+    
             [Serializable]
             private class Wrapper<T>
             {
