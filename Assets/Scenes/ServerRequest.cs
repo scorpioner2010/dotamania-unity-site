@@ -9,11 +9,9 @@ namespace Scenes
 {
     public class ServerRequest : MonoBehaviour
     {
-        public string serverUrl = "https://dotamania.bsite.net/api";
-        //public string serverUrl = "http://localhost:51754/api";
-    
-    
-
+        // Приклад локального сервера
+        private string serverUrl = "http://localhost:51754/api";
+        
         public Button send;       // Кнопка для завантаження контейнера
         public Button delete;     // Кнопка для видалення контейнера
         public TMP_Text result;
@@ -46,15 +44,14 @@ namespace Scenes
         {
             Texture2D texture;
     
-            // 1. Перевірка, чи спрайт порожній
+            // 1. Якщо спрайт порожній – створюємо 64x64 білу текстуру
             if (sprite == null)
             {
-                // 2. Створення 64x64 текстури білого кольору
                 texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
                 Color32[] pixels = new Color32[64 * 64];
                 for (int i = 0; i < pixels.Length; i++)
                 {
-                    pixels[i] = new Color32(255, 255, 255, 255); // білий
+                    pixels[i] = new Color32(255, 255, 255, 255);
                 }
                 texture.SetPixels32(pixels);
                 texture.Apply();
@@ -64,26 +61,27 @@ namespace Scenes
                 // Якщо спрайт не null, беремо його текстуру
                 texture = sprite.texture;
             }
-    
-            // 3. Перетворення текстури в PNG (масив байтів)
+
+            // 2. Перетворення текстури в PNG (масив байтів)
             byte[] imageData = texture.EncodeToPNG();
-    
-            // 4. Формування форми для завантаження
+
+            // 3. Формування форми для завантаження
             WWWForm form = new WWWForm();
-            form.AddField("containerName", nameContainer.text);
-            form.AddField("description", descriptionContainer.text);
-            form.AddBinaryData("file", imageData, "sprite.png", "image/png");
-    
-            // 5. Відправка запиту до серверного endpoint
-            using (UnityWebRequest www = UnityWebRequest.Post(serverUrl + "/uploadContainer", form))
+            // Поля мають співпадати з ContainerCreateDto на сервері
+            form.AddField("Name", nameContainer.text);
+            form.AddField("Description", descriptionContainer.text);
+            form.AddBinaryData("Image", imageData, "sprite.png", "image/png");
+
+            // 4. Відправка запиту (POST /api/containers)
+            using (UnityWebRequest www = UnityWebRequest.Post(serverUrl + "/containers", form))
             {
                 yield return www.SendWebRequest();
-        
+         
                 if (www.result == UnityWebRequest.Result.Success)
                 {
                     Debug.Log("Container uploaded successfully!");
                     result.text = "Container uploaded successfully!";
-                
+                 
                     // Оновлюємо список контейнерів
                     StartCoroutine(GetContainersFromServer());
                 }
@@ -94,7 +92,7 @@ namespace Scenes
                 }
             }
         }
-    
+     
         private IEnumerator DeleteContainer(string containerName)
         {
             if (string.IsNullOrEmpty(containerName))
@@ -102,17 +100,17 @@ namespace Scenes
                 result.text = "Container name is required for deletion.";
                 yield break;
             }
-        
-            // Формуємо URL для DELETE запиту
-            string url = serverUrl + "/deleteContainer/" + containerName;
+         
+            // Формуємо URL для DELETE (DELETE /api/containers/{name})
+            string url = serverUrl + "/containers/" + containerName;
             UnityWebRequest request = UnityWebRequest.Delete(url);
             yield return request.SendWebRequest();
-        
+         
             if (request.result == UnityWebRequest.Result.Success)
             {
                 Debug.Log("Container deleted successfully!");
                 result.text = "Container deleted successfully!";
-            
+             
                 // Оновлюємо список контейнерів
                 StartCoroutine(GetContainersFromServer());
             }
@@ -123,10 +121,11 @@ namespace Scenes
             }
         }
 
-        // ============ ОНОВЛЕННЯ СПИСКУ КОНТЕЙНЕРІВ ============
+        // ================== ОНОВЛЕННЯ СПИСКУ КОНТЕЙНЕРІВ ==================
 
         private IEnumerator GetContainersFromServer()
         {
+            // GET /api/containers
             using (UnityWebRequest www = UnityWebRequest.Get(serverUrl + "/containers"))
             {
                 yield return www.SendWebRequest();
@@ -146,7 +145,7 @@ namespace Scenes
                     {
                         // Створюємо текстуру
                         Texture2D tex = new Texture2D(2, 2);
-                    
+                     
                         if (!string.IsNullOrEmpty(c.imageBase64))
                         {
                             byte[] bytes = Convert.FromBase64String(c.imageBase64);
@@ -185,7 +184,7 @@ namespace Scenes
         }
 
         // ====== КЛАСИ-ДОПОМОЖНИКИ ======
-    
+
         [Serializable]
         public class MessageRequest
         {

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using RedDeck.Utilities; // <-- Якщо у вас є цей неймспейс, залиште. Інакше приберіть.
 using UnityEngine;
 
 namespace Scenes
@@ -9,19 +8,6 @@ namespace Scenes
         public Element prefabElement;
         public Transform content;
         public List<Element> elements = new();
-
-        public void Remove(string nameContainer)
-        {
-            elements.RemoveAllNull();
-            
-            foreach (Element element in elements)
-            {
-                if (element.nameContainer.text == nameContainer)
-                {
-                    Destroy(element.gameObject);
-                }
-            }
-        }
 
         public void RemoveAll()
         {
